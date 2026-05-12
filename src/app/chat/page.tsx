@@ -137,6 +137,24 @@ export default function ChatPage() {
       }
 
       setIsThinking(false);
+
+      try {
+        await fetch("/api/chat/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            roleId,
+            messages: messages
+              .filter((m) => m.id === userMessage.id || m.id === assistantMessage.id)
+              .map((m) => ({
+                role: m.role,
+                content: m.content,
+              })),
+          }),
+        });
+      } catch {
+        // 保存失败不影响用户体验
+      }
     } catch (error: unknown) {
       console.error("Chat error:", error);
       const errorMessage = error instanceof Error ? error.message : "未知错误";
