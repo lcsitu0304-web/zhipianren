@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+
+export const dynamic = 'force-dynamic';
 
 interface Message {
   id: string;
@@ -21,7 +23,7 @@ const roleInfo: Record<string, Role> = {
   "sunny-athlete": { id: "sunny-athlete", name: "沈曜", avatar: "🏃" },
 };
 
-export default function ChatPage() {
+function ChatContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const roleId = searchParams.get("roleId") || "gentle-senior";
@@ -294,5 +296,21 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ChatLoading() {
+  return (
+    <div className="flex h-screen flex-col items-center justify-center bg-gradient-to-b from-pink-50 to-purple-50">
+      <div className="text-pink-500">加载中...</div>
+    </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<ChatLoading />}>
+      <ChatContent />
+    </Suspense>
   );
 }
