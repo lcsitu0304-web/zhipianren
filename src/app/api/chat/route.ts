@@ -2,6 +2,7 @@ import { OpenAI } from "openai";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { messages } from "@/lib/schema";
+import { eq, asc } from "drizzle-orm";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -99,6 +100,34 @@ async function saveToDatabase(roleId: string, userMessage: string, aiResponse: s
 }
 
 export const dynamic = "force-dynamic";
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const roleId = searchParams.get("roleId");
+
+    if (!roleId) {
+      return NextResponse.json(
+        { error: "roleId is required" },
+        { status: 400 }
+      );
+    }
+
+    const history = await db
+      .select()
+      .from(messages)
+      .where(eq(messages.roleId, roleId))
+      .orderBy(asc(messages.createdAt));
+
+    return NextResponse.json({ history });
+  } catch (error) {
+    console.error("Get history API error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
 
 function getSystemMessage(roleId: string | undefined): string {
   const roles: Record<string, string> = {

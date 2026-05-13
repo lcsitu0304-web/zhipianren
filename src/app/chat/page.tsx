@@ -33,11 +33,46 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [hasLoadedHistory, setHasLoadedHistory] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    async function loadHistory() {
+      if (hasLoadedHistory) return;
+      
+      try {
+        const response = await fetch(`/api/chat?roleId=${roleId}`);
+        const data = await response.json();
+        
+        if (data.history && data.history.length > 0) {
+          const historyMessages: Message[] = data.history.map((m: { id: number; role: string; content: string }, idx: number) => ({
+            id: `history-${m.id}`,
+            role: m.role as "user" | "assistant",
+            content: m.content,
+          }));
+          
+          setMessages((prev) => {
+            // 如果有历史记录，用历史记录替换初始欢迎语
+            if (historyMessages.length > 0) {
+              return historyMessages;
+            }
+            return prev;
+          });
+        }
+        
+        setHasLoadedHistory(true);
+      } catch (error) {
+        console.error("Failed to load history:", error);
+        setHasLoadedHistory(true);
+      }
+    }
+    
+    loadHistory();
+  }, [roleId, hasLoadedHistory]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
